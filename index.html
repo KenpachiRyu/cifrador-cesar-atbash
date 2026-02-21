@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cifrador Formal Blindado</title>
+
+<style>
+body{
+    font-family: Arial;
+    background:#0f172a;
+    color:white;
+    display:flex;
+    justify-content:center;
+    padding:40px;
+}
+.container{
+    background:#1e293b;
+    padding:30px;
+    border-radius:12px;
+    width:750px;
+}
+textarea{
+    width:100%;
+    height:100px;
+    margin:10px 0;
+    padding:10px;
+    border-radius:6px;
+    border:none;
+}
+select,input{
+    width:100%;
+    padding:8px;
+    margin:5px 0;
+    border-radius:6px;
+    border:none;
+}
+button{
+    width:100%;
+    padding:10px;
+    margin:6px 0;
+    border:none;
+    border-radius:6px;
+    background:#3b82f6;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+button:hover{
+    background:#2563eb;
+}
+button:disabled{
+    background:gray;
+    cursor:not-allowed;
+}
+.resultado{
+    background:#0f172a;
+    padding:10px;
+    border-radius:6px;
+    margin-top:10px;
+    white-space:pre-line;
+}
+.advertencia{
+    color:#f87171;
+    font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h2>Cifrador César y Atbash</h2>
+
+<label>Texto:</label>
+<textarea id="texto"></textarea>
+
+<label>Seleccionar conjunto:</label>
+<select id="tipoConjunto" onchange="actualizarConjunto()">
+    <option value="ascii">ASCII completo (32–126)</option>
+    <option value="letras">Solo letras (A-Z a-z)</option>
+    <option value="alfaNum">Letras + números</option>
+    <option value="personalizado">Personalizado</option>
+</select>
+
+<input type="text" id="conjuntoPersonalizado"
+placeholder="Escribe tu conjunto aquí" disabled>
+
+<div class="advertencia" id="mensajeConjunto"></div>
+
+<label>Módulo (César):</label>
+<input type="number" id="modulo" value="1">
+
+<button id="btnCesar" onclick="toggleCesar()">César Cifrar/Descifrar</button>
+<button id="btnAtbash" onclick="toggleAtbash()">Atbash Cifrar/Descifrar</button>
+<button id="btnDetectar" onclick="detectar()">Detectar tipo</button>
+
+<div class="resultado" id="resultado"></div>
+
+</div>
+
+<script>
+
+function generarASCII(){
+    let ascii="";
+    for(let i=32;i<=126;i++){
+        ascii+=String.fromCharCode(i);
+    }
+    return ascii;
+}
+
+let conjunto = generarASCII();
+let cesarActivo = false;
+
+function validarConjunto(){
+
+    let tamaño = conjunto.length;
+    let inputModulo = document.getElementById("modulo");
+    let mensaje = document.getElementById("mensajeConjunto");
+
+    let btnCesar = document.getElementById("btnCesar");
+    let btnAtbash = document.getElementById("btnAtbash");
+    let btnDetectar = document.getElementById("btnDetectar");
+
+    if(tamaño < 2){
+
+        inputModulo.value = 0;
+        inputModulo.min = 0;
+        inputModulo.max = 0;
+
+        btnCesar.disabled = true;
+        btnAtbash.disabled = true;
+        btnDetectar.disabled = true;
+
+        mensaje.innerText = "El conjunto debe tener al menos 2 caracteres para que el cifrado funcione.";
+
+    }else{
+
+        inputModulo.min = 1;
+        inputModulo.max = tamaño - 1;
+
+        if(inputModulo.value < 1) inputModulo.value = 1;
+        if(inputModulo.value > tamaño - 1) inputModulo.value = tamaño - 1;
+
+        btnCesar.disabled = false;
+        btnAtbash.disabled = false;
+        btnDetectar.disabled = false;
+
+        mensaje.innerText = "";
+    }
+}
+
+function actualizarConjunto(){
+    let tipo = document.getElementById("tipoConjunto").value;
+    let inputPersonal = document.getElementById("conjuntoPersonalizado");
+
+    if(tipo === "ascii"){
+        conjunto = generarASCII();
+        inputPersonal.disabled = true;
+    }
+    else if(tipo === "letras"){
+        conjunto = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        inputPersonal.disabled = true;
+    }
+    else if(tipo === "alfaNum"){
+        conjunto = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        inputPersonal.disabled = true;
+    }
+    else{
+        inputPersonal.disabled = false;
+        conjunto = inputPersonal.value;
+    }
+
+    cesarActivo = false;
+    validarConjunto();
+}
+
+document.getElementById("conjuntoPersonalizado")
+.addEventListener("input", function(){
+
+    if(document.getElementById("tipoConjunto").value === "personalizado"){
+        let limpio = [...new Set(this.value)].join('');
+        this.value = limpio;
+        conjunto = limpio;
+        cesarActivo = false;
+        validarConjunto();
+    }
+});
+
+document.getElementById("modulo")
+.addEventListener("input", function(){
+    let tamaño = conjunto.length;
+    let valor = parseInt(this.value);
+
+    if(tamaño < 2){
+        this.value = 0;
+        return;
+    }
+
+    if(isNaN(valor) || valor < 1) valor = 1;
+    if(valor > tamaño - 1) valor = tamaño - 1;
+
+    this.value = valor;
+});
+
+function cifradoCesar(texto, desplazamiento){
+    let resultado="";
+    let tamaño=conjunto.length;
+
+    for(let i=0;i<texto.length;i++){
+        let indice=conjunto.indexOf(texto[i]);
+
+        if(indice!==-1){
+            let nuevo=(indice+desplazamiento)%tamaño;
+            resultado+=conjunto[nuevo];
+        }else{
+            resultado+=texto[i];
+        }
+    }
+    return resultado;
+}
+
+function toggleCesar(){
+    let textoArea=document.getElementById("texto");
+    let texto=textoArea.value;
+    let modulo=parseInt(document.getElementById("modulo").value);
+
+    if(!cesarActivo){
+        textoArea.value=cifradoCesar(texto,modulo);
+        cesarActivo=true;
+    }else{
+        textoArea.value=cifradoCesar(texto,conjunto.length - modulo);
+        cesarActivo=false;
+    }
+}
+
+function cifradoAtbash(texto){
+    let resultado="";
+    let tamaño=conjunto.length;
+
+    for(let i=0;i<texto.length;i++){
+        let indice=conjunto.indexOf(texto[i]);
+
+        if(indice!==-1){
+            resultado+=conjunto[tamaño-1-indice];
+        }else{
+            resultado+=texto[i];
+        }
+    }
+    return resultado;
+}
+
+function toggleAtbash(){
+    let textoArea=document.getElementById("texto");
+    textoArea.value=cifradoAtbash(textoArea.value);
+}
+
+function puntuarTexto(texto){
+
+    let puntuacion = 0;
+    let textoLower = texto.toLowerCase();
+
+    let letrasFrecuentes = "eaosnrldtu";
+    let vocales = "aeiou";
+
+    for(let i = 0; i < textoLower.length; i++){
+
+        let c = textoLower[i];
+
+        if(letrasFrecuentes.includes(c)) puntuacion += 2;
+        if(vocales.includes(c)) puntuacion += 1;
+        if(c === " ") puntuacion += 4;
+        if(/[^\w\s]/.test(c)) puntuacion -= 1;
+    }
+
+    let palabrasComunes = [" el ", " la ", " de ", " que ", " y ", " en ", " los ", " del "];
+
+    palabrasComunes.forEach(palabra=>{
+        if(textoLower.includes(palabra)){
+            puntuacion += 8;
+        }
+    });
+
+    let simbolosConsecutivos = texto.match(/[^\w\s]{3,}/g);
+    if(simbolosConsecutivos){
+        puntuacion -= simbolosConsecutivos.length * 5;
+    }
+
+    return puntuacion;
+}
+
+function detectar(){
+    let texto=document.getElementById("texto").value;
+    let mejores=[];
+
+    for(let i=1;i<conjunto.length;i++){
+        let intento=cifradoCesar(texto,(conjunto.length - i));
+        let score=puntuarTexto(intento);
+
+        mejores.push({
+            tipo:"César",
+            modulo:i,
+            resultado:intento,
+            puntuacion:score
+        });
+    }
+
+    let atbashResultado=cifradoAtbash(texto);
+    let atbashScore=puntuarTexto(atbashResultado);
+
+    mejores.push({
+        tipo:"Atbash",
+        modulo:"-",
+        resultado:atbashResultado,
+        puntuacion:atbashScore
+    });
+
+    mejores.sort((a,b)=>b.puntuacion-a.puntuacion);
+
+    let top3=mejores.slice(0,3);
+
+    let salida="Resultados más probables:\n\n";
+
+    top3.forEach((item,index)=>{
+        salida+=(index+1)+") "+item.tipo;
+
+        if(item.tipo==="César"){
+            salida+=" (Módulo "+item.modulo+")";
+        }
+
+        salida+="\n"+item.resultado+"\n\n";
+    });
+
+    document.getElementById("resultado").innerText=salida;
+}
+
+validarConjunto();
+
+</script>
+
+</body>
+</html>
