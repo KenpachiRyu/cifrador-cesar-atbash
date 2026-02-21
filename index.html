@@ -5,6 +5,7 @@
 <title>Cifrador Formal Blindado</title>
 
 <style>
+/* Estilo general de la página */
 body{
     font-family: Arial;
     background:#0f172a;
@@ -13,12 +14,16 @@ body{
     justify-content:center;
     padding:40px;
 }
+
+/* Caja principal que contiene toda la aplicación */
 .container{
     background:#1e293b;
     padding:30px;
     border-radius:12px;
     width:750px;
 }
+
+/* Área donde el usuario escribe el texto */
 textarea{
     width:100%;
     height:100px;
@@ -27,6 +32,8 @@ textarea{
     border-radius:6px;
     border:none;
 }
+
+/* Selectores y campos de entrada */
 select,input{
     width:100%;
     padding:8px;
@@ -34,6 +41,8 @@ select,input{
     border-radius:6px;
     border:none;
 }
+
+/* Botones principales */
 button{
     width:100%;
     padding:10px;
@@ -45,13 +54,18 @@ button{
     font-weight:bold;
     cursor:pointer;
 }
+
 button:hover{
     background:#2563eb;
 }
+
+/* Cuando un botón está deshabilitado */
 button:disabled{
     background:gray;
     cursor:not-allowed;
 }
+
+/* Área donde se muestran resultados */
 .resultado{
     background:#0f172a;
     padding:10px;
@@ -59,6 +73,8 @@ button:disabled{
     margin-top:10px;
     white-space:pre-line;
 }
+
+/* Mensajes de advertencia */
 .advertencia{
     color:#f87171;
     font-size:14px;
@@ -71,9 +87,11 @@ button:disabled{
 
 <h2>Cifrador César y Atbash</h2>
 
+<!-- Campo donde el usuario escribe el texto -->
 <label>Texto:</label>
 <textarea id="texto"></textarea>
 
+<!-- Selector para elegir qué conjunto de caracteres se usará -->
 <label>Seleccionar conjunto:</label>
 <select id="tipoConjunto" onchange="actualizarConjunto()">
     <option value="ascii">ASCII completo (32–126)</option>
@@ -82,24 +100,34 @@ button:disabled{
     <option value="personalizado">Personalizado</option>
 </select>
 
+<!-- Campo para que el usuario escriba su propio conjunto -->
 <input type="text" id="conjuntoPersonalizado"
 placeholder="Escribe tu conjunto aquí" disabled>
 
+<!-- Mensaje que aparece si hay algún problema con el conjunto -->
 <div class="advertencia" id="mensajeConjunto"></div>
 
+<!-- Campo donde se define el número de desplazamiento del César -->
 <label>Módulo (César):</label>
 <input type="number" id="modulo" value="1">
 
+<!-- Botones principales -->
 <button id="btnCesar" onclick="toggleCesar()">César Cifrar/Descifrar</button>
 <button id="btnAtbash" onclick="toggleAtbash()">Atbash Cifrar/Descifrar</button>
 <button id="btnDetectar" onclick="detectar()">Detectar tipo</button>
 
+<!-- Aquí se muestran los posibles resultados -->
 <div class="resultado" id="resultado"></div>
 
 </div>
 
 <script>
 
+/*
+Esta función crea el conjunto ASCII completo.
+Incluye todos los caracteres imprimibles del 32 al 126.
+Será el conjunto por defecto.
+*/
 function generarASCII(){
     let ascii="";
     for(let i=32;i<=126;i++){
@@ -108,9 +136,23 @@ function generarASCII(){
     return ascii;
 }
 
+/*
+"conjunto" guarda los caracteres que se usarán para cifrar.
+Por defecto empieza con ASCII completo.
+*/
 let conjunto = generarASCII();
+
+/*
+Esta variable nos ayuda a saber si el texto ya fue cifrado
+con César para poder descifrarlo al presionar nuevamente.
+*/
 let cesarActivo = false;
 
+/*
+Valida que el conjunto tenga al menos 2 caracteres.
+Si no los tiene, desactiva los botones porque no se puede cifrar.
+También ajusta automáticamente los límites del módulo.
+*/
 function validarConjunto(){
 
     let tamaño = conjunto.length;
@@ -131,7 +173,7 @@ function validarConjunto(){
         btnAtbash.disabled = true;
         btnDetectar.disabled = true;
 
-        mensaje.innerText = "El conjunto debe tener al menos 2 caracteres para que el cifrado funcione.";
+        mensaje.innerText = "El conjunto debe tener al menos 2 caracteres.";
 
     }else{
 
@@ -149,6 +191,10 @@ function validarConjunto(){
     }
 }
 
+/*
+Actualiza el conjunto dependiendo de la opción elegida.
+Si es personalizado, habilita el campo para escribir.
+*/
 function actualizarConjunto(){
     let tipo = document.getElementById("tipoConjunto").value;
     let inputPersonal = document.getElementById("conjuntoPersonalizado");
@@ -174,6 +220,10 @@ function actualizarConjunto(){
     validarConjunto();
 }
 
+/*
+Si el usuario escribe un conjunto personalizado,
+esta parte elimina caracteres repetidos automáticamente.
+*/
 document.getElementById("conjuntoPersonalizado")
 .addEventListener("input", function(){
 
@@ -186,6 +236,9 @@ document.getElementById("conjuntoPersonalizado")
     }
 });
 
+/*
+Controla que el módulo esté dentro de los límites válidos.
+*/
 document.getElementById("modulo")
 .addEventListener("input", function(){
     let tamaño = conjunto.length;
@@ -202,6 +255,11 @@ document.getElementById("modulo")
     this.value = valor;
 });
 
+/*
+Cifrado César:
+Desplaza cada carácter según el módulo elegido.
+Si un carácter no pertenece al conjunto, se deja igual.
+*/
 function cifradoCesar(texto, desplazamiento){
     let resultado="";
     let tamaño=conjunto.length;
@@ -219,6 +277,10 @@ function cifradoCesar(texto, desplazamiento){
     return resultado;
 }
 
+/*
+Este botón permite cifrar y descifrar usando César.
+Si ya está cifrado, lo revierte.
+*/
 function toggleCesar(){
     let textoArea=document.getElementById("texto");
     let texto=textoArea.value;
@@ -233,6 +295,10 @@ function toggleCesar(){
     }
 }
 
+/*
+Cifrado Atbash:
+Intercambia cada carácter por su "opuesto" dentro del conjunto.
+*/
 function cifradoAtbash(texto){
     let resultado="";
     let tamaño=conjunto.length;
@@ -249,11 +315,20 @@ function cifradoAtbash(texto){
     return resultado;
 }
 
+/*
+Aplica Atbash directamente al texto actual.
+*/
 function toggleAtbash(){
     let textoArea=document.getElementById("texto");
     textoArea.value=cifradoAtbash(textoArea.value);
 }
 
+/*
+Esta función intenta determinar si el texto tiene
+estructura similar al español.
+Suma puntos si encuentra letras comunes,
+vocales y palabras frecuentes.
+*/
 function puntuarTexto(texto){
 
     let puntuacion = 0;
@@ -280,14 +355,15 @@ function puntuarTexto(texto){
         }
     });
 
-    let simbolosConsecutivos = texto.match(/[^\w\s]{3,}/g);
-    if(simbolosConsecutivos){
-        puntuacion -= simbolosConsecutivos.length * 5;
-    }
-
     return puntuacion;
 }
 
+/*
+Detecta automáticamente si el texto fue cifrado
+con César o Atbash.
+Prueba todos los desplazamientos posibles y muestra
+los 3 resultados más probables.
+*/
 function detectar(){
     let texto=document.getElementById("texto").value;
     let mejores=[];
@@ -333,6 +409,7 @@ function detectar(){
     document.getElementById("resultado").innerText=salida;
 }
 
+/* Validación inicial al cargar la página */
 validarConjunto();
 
 </script>
